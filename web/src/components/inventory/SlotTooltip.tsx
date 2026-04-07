@@ -58,13 +58,19 @@ const SlotTooltip: React.ForwardRefRenderFunction<
   const isItemCurrency = item.currency && item.currency !== 'money' && item.currency !== 'black_money';
   const stockCount = isShop ? item.count : null;
 
+  const hasAdditionalMetadata = !isShop && !isCraft && additionalMetadata.some((data) => {
+    const value = item.metadata?.[data.metadata];
+    return value !== undefined && value !== null;
+  });
+
   const hasDetails = !isShop && !isCraft && (
     item.durability !== undefined ||
     item.metadata?.ammo !== undefined ||
     ammoName ||
     item.metadata?.serial ||
     (item.metadata?.components && item.metadata?.components[0]) ||
-    item.metadata?.weapontint
+    item.metadata?.weapontint ||
+    hasAdditionalMetadata
   );
 
   if (!itemData) {
@@ -286,9 +292,18 @@ const SlotTooltip: React.ForwardRefRenderFunction<
               <span className="tooltip-detail-value">{item.metadata.weapontint}</span>
             </div>
           )}
-          {additionalMetadata.map((data: { metadata: string; value: string }, index: number) => (
-            <Fragment key={`metadata-${index}`}>
-              {item.metadata && item.metadata[data.metadata] && (
+          {additionalMetadata.map((data: { metadata: string; value: string }, index: number) => {
+            const metadataValue = item.metadata?.[data.metadata];
+            const hasMetadataValue = metadataValue !== undefined && metadataValue !== null;
+
+            if (!hasMetadataValue) return null;
+
+            const displayValue = typeof metadataValue === 'object'
+              ? JSON.stringify(metadataValue)
+              : String(metadataValue);
+
+            return (
+              <Fragment key={`metadata-${index}`}>
                 <div className="tooltip-detail-row">
                   <span className="tooltip-detail-label">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -296,11 +311,11 @@ const SlotTooltip: React.ForwardRefRenderFunction<
                     </svg>
                     {data.value}
                   </span>
-                  <span className="tooltip-detail-value">{item.metadata[data.metadata]}</span>
+                  <span className="tooltip-detail-value">{displayValue}</span>
                 </div>
-              )}
-            </Fragment>
-          ))}
+              </Fragment>
+            );
+          })}
         </div>
       )}
 
